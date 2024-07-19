@@ -12,6 +12,11 @@ import java.awt.*;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import javax.imageio.ImageIO;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.image.BufferedImage;
+import java.net.URL;
 
 public class PokedexApp {
     private static final String API_URL = "https://pokeapi.co/api/v2/pokemon?limit=30&offset=0";
@@ -30,6 +35,20 @@ public class PokedexApp {
         JTable table = new JTable(tableModel);
 
         JScrollPane pane = new JScrollPane(table);
+
+        table.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent evt) {
+                int row = table.rowAtPoint(evt.getPoint());
+                if (row >= 0) {
+                    int pokemonId = (int) table.getValueAt(row, 0);
+                    String pokemonName = table.getValueAt(row, 1).toString();
+                    
+                    String imageUrl = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/" + pokemonId + ".png";
+                    displayImageInNewFrame(pokemonName, imageUrl);
+                }
+            }
+        });
 
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
@@ -65,6 +84,26 @@ public class PokedexApp {
         }
 
         return pokemonList;
+    }
+
+        private void displayImageInNewFrame(String pokemonName, String imageUrl) {
+        JFrame imageFrame = new JFrame(pokemonName);
+        imageFrame.setSize(300, 400);
+        imageFrame.setLayout(new BorderLayout());
+
+        try {
+            BufferedImage image = ImageIO.read(new URL(imageUrl));
+            JLabel imageLabel = new JLabel(new ImageIcon(image));
+            imageFrame.add(imageLabel, BorderLayout.CENTER);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+
+        imageFrame.add(panel, BorderLayout.NORTH);
+        imageFrame.setVisible(true);
     }
 }
 
