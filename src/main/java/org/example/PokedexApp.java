@@ -44,8 +44,14 @@ public class PokedexApp {
                     int pokemonId = (int) table.getValueAt(row, 0);
                     String pokemonName = table.getValueAt(row, 1).toString();
                     
-                    String imageUrl = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/" + pokemonId + ".png";
-                    displayImageInNewFrame(pokemonName, imageUrl);
+                    try {
+                        String imageUrl = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/" + pokemonId + ".png";
+                        String pokemonType = fetchPokemonType(pokemonId);
+                        displayDetail(pokemonName, pokemonType, imageUrl);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+
                 }
             }
         });
@@ -86,10 +92,39 @@ public class PokedexApp {
         return pokemonList;
     }
 
-        private void displayImageInNewFrame(String pokemonName, String imageUrl) {
+    private String fetchPokemonType(int pokemonId) throws IOException {
+        String typeApiUrl = "https://pokeapi.co/api/v2/pokemon/" + pokemonId;
+        OkHttpClient client = new OkHttpClient();
+        Request request = new Request.Builder().url(typeApiUrl).build();
+
+        try (Response response = client.newCall(request).execute()) {
+            if (response.isSuccessful()) {
+                ObjectMapper mapper = new ObjectMapper();
+                JsonNode rootNode = mapper.readTree(response.body().string());
+                JsonNode typesNode = rootNode.get("types");
+
+                List<String> types = new ArrayList<>();
+                for (JsonNode typeNode : typesNode) {
+                    types.add(typeNode.get("type").get("name").asText());
+                }
+
+                return String.join(", ", types);
+            }
+        }
+
+        return "Unknown";
+    }
+    
+        private void displayDetail(String pokemonName, String pokemonType, String imageUrl) {
         JFrame imageFrame = new JFrame(pokemonName);
         imageFrame.setSize(300, 400);
         imageFrame.setLayout(new BorderLayout());
+
+        JLabel nameLabel = new JLabel(pokemonName, SwingConstants.CENTER);
+        nameLabel.setFont(new Font("Arial", Font.BOLD, 20));
+        
+        JLabel typeLabel = new JLabel("Type: " + pokemonType, SwingConstants.CENTER);
+        typeLabel.setFont(new Font("Arial", Font.PLAIN, 16));
 
         try {
             BufferedImage image = ImageIO.read(new URL(imageUrl));
@@ -101,6 +136,8 @@ public class PokedexApp {
 
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.add(nameLabel);
+        panel.add(typeLabel);
 
         imageFrame.add(panel, BorderLayout.NORTH);
         imageFrame.setVisible(true);
